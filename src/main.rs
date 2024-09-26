@@ -42,13 +42,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         Setting::new_check_setting("Group", false),
         Setting::new_options_setting("Depth", VecDeque::from(["Infinite".to_string(), "1".to_string(), "2".to_string(), "3".to_string()]))
     ];
-    let mut selected_index = 0;
+    let mut selected_index: usize = 0;
 
     // Find State
     let mut list_state = ListState::default();
     list_state.select(Some(selected_index));
 
-    let mut state = StateMachine::new();
+    let mut state = StateMachine::new(selected_index, settings.len());
 
     loop {
 
@@ -106,46 +106,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             if let event::Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Esc | KeyCode::Char('q') => break,
-                    _ => state.delegateInput(key),
-                    /* KeyCode::Char('j') => {
-                        if modifiers.contains(crossterm::event::KeyModifiers::SHIFT) {
-                            // Move selected block
-                        } else {
-                            if selected_index < settings.len() - 1 {
-                                selected_index += 1;
-                            }
-                        }
-                    }
-                    KeyCode::Char('k') => {
-                        if modifiers.contains(crossterm::event::KeyModifiers::SHIFT) {
-                            // Move selected block
-                        } else {
-                            if selected_index > 0 {
-                                selected_index -= 1;
-                            }
-                        }
-                    }
-                    KeyCode::Char('h') => {
-                        if modifiers.contains(crossterm::event::KeyModifiers::SHIFT) {
-                            // Move selected block
-                        } else {
-                            settings[selected_index].cycle_setting(false)
-                        }
-                    },
-                    KeyCode::Char('l') => {
-                        if modifiers.contains(crossterm::event::KeyModifiers::SHIFT) {
-                            // Move selected block
-                        } else {
-                            settings[selected_index].cycle_setting(true)
-                        }
-                    },
-                    KeyCode::Enter => {
-                        if modifiers.contains(crossterm::event::KeyModifiers::SHIFT) {
-                            // Move selected block
-                        } else {
-                            settings[selected_index].toggle_setting()
-                        }
-                    } */
+                    _ => state.delegate_input(key),
                 }
             }
             list_state.select(Some(selected_index));
