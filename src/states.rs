@@ -1,9 +1,13 @@
 use crossterm::event::{self, KeyCode};
+use crate::settings::Setting;
 
-struct SettingsWindow(usize, usize);
+#[derive(Clone)]
+struct SettingsWindow(usize, Vec<Setting>);
 
+#[derive(Clone)]
 struct FilesWindow;
 
+#[derive(Clone)]
 struct OtherWindow;
 
 enum State {
@@ -14,61 +18,63 @@ enum State {
 
 pub struct StateMachine {
     active: State,
-    settings: State,
-    files: State,
-    other: State,
+    settings_window: SettingsWindow,
+    files_window: FilesWindow,
+    other_window: OtherWindow,
 }
 
 impl StateMachine {
     fn handle_transition(&mut self, key: event::KeyEvent) {
         match key.code {
             KeyCode::Char('j') | KeyCode::Char('k') => match self.active {
-                State::Settings(_) => {
-                    self.settings = self.active;
-                    self.active = self.other;
+                State::Settings(ref mut settings_window) => {
+                    self.settings_window = settings_window.clone();
+                    self.active = State::Other(self.other_window.clone());
                 }
-                State::Other(_) => {
-                    self.other = self.active;
-                    self.active = self.settings;
+                State::Other(other_window) => {
+                    self.other_window = other_window;
+                    self.active = State::Settings(self.settings_window.clone());
                 }
                 _ => {}
             }
             KeyCode::Char('h') | KeyCode::Char('l') => match self.active {
-                State::Settings(_)=> {
-                    self.settings = self.active;
-                    self.active = self.files;
+                State::Settings(ref mut settings_window)=> {
+                    self.settings_window = settings_window.clone();
+                    self.active = State::Files(self.files_window.clone());
                 }
-                State::Other(_)=> {
-                    self.other = self.active;
-                    self.active = self.files;
+                State::Other(other_window)=> {
+                    self.other_window = other_window.clone();
+                    self.active = State::Files(self.files_window.clone());
                 }
-                State::Files(_) => {
-                    self.files = self.active;
-                    self.active = self.settings;
+                State::Files(files_window) => {
+                    self.files_window = files_window.clone();
+                    self.active = State::Settings(self.settings_window.clone());
                 }
             }
             _ => {}
         }
     }
 
-    fn control_settings(&mut self, key: event::KeyEvent) {
+    fn control_settings(&mut self, settings_window: &mut SettingsWindow, key: event::KeyEvent) {
+        let index = &mut settings_window.0;
+        let settings = &mut settings_window.1;
         match key.code {
             KeyCode::Char('j') => {
-                if selected_index < settings.len() - 1 {
-                    selected_index += 1;
+                if *index < settings.len() - 1 {
+                    *index += 1;
                 }
             },
             KeyCode::Char('k') => {
-                if selected_index > 0 {
-                    selected_index -= 1;
+                if *index > 0 {
+                    *index -= 1;
                 }
             },
             KeyCode::Char('h') =>
-                settings[selected_index].cycle_setting(false),
+                settings[*index].cycle_setting(false),
             KeyCode::Char('l') =>
-                settings[selected_index].cycle_setting(true),
+                settings[*index].cycle_setting(true),
             KeyCode::Enter =>
-                settings[selected_index].toggle_setting()
+                settings[*index].toggle_setting(),
             _ => {}
         }
     }
@@ -85,27 +91,33 @@ impl StateMachine {
         }
     }
 
+    pub fn get_settings_index(&mut self) -> usize {
+        match self.active {
+            State::Settings(ref mut settings_window) => settings_window.0,
+            _ => self.settings_window.0
+        }
+    }
+
     pub fn delegate_input(&mut self, key: event::KeyEvent) {
         match key.modifiers {
             event::KeyModifiers::SHIFT => self.handle_transition(key),
             _ => match self.active {
-                State::Settings(_) => self.control_settings(key),
+                State::Settings(ref mut settings_window) => self.control_settings(settings_window, key),
                 State::Other(_) => self.control_other(key),
                 State::Files(_) => self.control_files(key),
-                _ => {}
             }
         }
     }
 
-    pub fn new(index: usize, wrap: usize) -> Self {
-        let settings = State::Settings(SettingsWindow(index, wrap));
-        let files = State::Files(FilesWindow);
-        let other = State::Other(OtherWindow);
+    pub fn new(settings: &mut Vec<Setting>) -> Self {
+        let settings_window = SettingsWindow(0, *settings);
+        let files_window = FilesWindow;
+        let other_window = OtherWindow;
         StateMachine {
-            active: settings,
-            settings,
-            files,
-            other,
+            active: State::Settings(settings_window.clone()),
+            settings_window,
+            files_window,
+            other_window,
         }
     }
 }

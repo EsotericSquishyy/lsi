@@ -42,13 +42,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         Setting::new_check_setting("Group", false),
         Setting::new_options_setting("Depth", VecDeque::from(["Infinite".to_string(), "1".to_string(), "2".to_string(), "3".to_string()]))
     ];
-    let mut selected_index: usize = 0;
+
+    // State Machine
+    let mut state = StateMachine::new(&mut settings);
 
     // Find State
-    let mut list_state = ListState::default();
-    list_state.select(Some(selected_index));
-
-    let mut state = StateMachine::new(selected_index, settings.len());
+    let mut settings_list_state = ListState::default();
+    settings_list_state.select(Some(state.get_settings_index()));
 
     loop {
 
@@ -96,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .highlight_style(Style::default().fg(Color::Yellow))
                 .divider(tui::symbols::DOT);
 
-            f.render_stateful_widget(list, left_chunks[0], &mut list_state);
+            f.render_stateful_widget(list, left_chunks[0], &mut settings_list_state);
             f.render_widget(tabs, layout[1]);
             f.render_widget(other_block, left_chunks[1]);
         })?;
@@ -109,7 +109,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     _ => state.delegate_input(key),
                 }
             }
-            list_state.select(Some(selected_index));
+            settings_list_state.select(Some(state.get_settings_index()));
         }
     }
 

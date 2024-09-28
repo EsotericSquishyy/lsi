@@ -1,11 +1,13 @@
 // Setting object
 use std::collections::VecDeque;
 
+#[derive(Clone)]
 enum SettingVal {
     Check(bool),
     Options(VecDeque<String>),
 }
 
+#[derive(Clone)]
 pub struct Setting {
     title: String,
     value: SettingVal,
