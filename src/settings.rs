@@ -33,8 +33,9 @@ impl Setting {
         match &self.value {
             SettingVal::Check(v) =>
                 format!("{:<title_width$} {:^setting_width$}", t_adj, if *v { "[X]" } else { "[ ]" }),
-            SettingVal::Options(v) =>
+            SettingVal::Options(v) => {
                 format!("{:<title_width$} ◀{:^setting_width$}▶", t_adj, v[0])
+            }
         }
     }
 

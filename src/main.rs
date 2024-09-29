@@ -89,15 +89,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .block(options_block)
                 .highlight_style(Style::default().bg(Color::Blue).fg(Color::White));
 
-            let titles = ["Tab1", "Tab2", "Tab3", "Tab4"].iter().cloned().map(tui::text::Spans::from).collect();
-            let tabs = Tabs::new(titles)
-                .block(files_block)
-                .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default().fg(Color::Yellow))
-                .divider(tui::symbols::DOT);
+            // let titles = ["Tab1", "Tab2", "Tab3", "Tab4"].iter().cloned().map(tui::text::Spans::from).collect();
+            // let tabs = Tabs::new(titles)
+            //     .block(files_block)
+            //     .style(Style::default().fg(Color::White))
+            //     .highlight_style(Style::default().fg(Color::Yellow))
+            //     .divider(tui::symbols::DOT);
 
             f.render_stateful_widget(list, left_chunks[0], &mut settings_list_state);
-            f.render_widget(tabs, layout[1]);
+            f.render_widget(files_block, layout[1]);
             f.render_widget(other_block, left_chunks[1]);
         })?;
 
@@ -110,6 +110,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
             settings_list_state.select(Some(state.get_settings_index()));
+            // state.print_active_setting(0);
+            // state.print_state(); // Debug
         }
     }
 

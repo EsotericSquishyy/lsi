@@ -26,27 +26,27 @@ pub struct StateMachine {
 impl StateMachine {
     fn handle_transition(&mut self, key: event::KeyEvent) {
         match key.code {
-            KeyCode::Char('j') | KeyCode::Char('k') => match self.active {
-                State::Settings(ref mut settings_window) => {
+            KeyCode::Char('J') | KeyCode::Char('K') => match self.active {
+                State::Settings(ref settings_window) => {
                     self.settings_window = settings_window.clone();
                     self.active = State::Other(self.other_window.clone());
                 }
-                State::Other(other_window) => {
-                    self.other_window = other_window;
+                State::Other(ref other_window) => {
+                    self.other_window = other_window.clone();
                     self.active = State::Settings(self.settings_window.clone());
                 }
                 _ => {}
             }
-            KeyCode::Char('h') | KeyCode::Char('l') => match self.active {
-                State::Settings(ref mut settings_window)=> {
+            KeyCode::Char('H') | KeyCode::Char('L') => match self.active {
+                State::Settings(ref settings_window) => {
                     self.settings_window = settings_window.clone();
                     self.active = State::Files(self.files_window.clone());
                 }
-                State::Other(other_window)=> {
+                State::Other(ref other_window) => {
                     self.other_window = other_window.clone();
                     self.active = State::Files(self.files_window.clone());
                 }
-                State::Files(files_window) => {
+                State::Files(ref files_window) => {
                     self.files_window = files_window.clone();
                     self.active = State::Settings(self.settings_window.clone());
                 }
@@ -55,7 +55,7 @@ impl StateMachine {
         }
     }
 
-    fn control_settings(&mut self, settings_window: &mut SettingsWindow, key: event::KeyEvent) {
+    fn control_settings(settings_window: &mut SettingsWindow, key: event::KeyEvent) {
         let index = &mut settings_window.0;
         let settings = &mut settings_window.1;
         match key.code {
@@ -69,23 +69,24 @@ impl StateMachine {
                     *index -= 1;
                 }
             },
-            KeyCode::Char('h') =>
-                settings[*index].cycle_setting(false),
-            KeyCode::Char('l') =>
-                settings[*index].cycle_setting(true),
-            KeyCode::Enter =>
-                settings[*index].toggle_setting(),
+            KeyCode::Char('h') => {
+                settings[*index].cycle_setting(false);
+            },
+            KeyCode::Char('l') => {
+                settings[*index].cycle_setting(true);},
+            KeyCode::Enter => {
+                settings[*index].toggle_setting();},
             _ => {}
         }
     }
 
-    fn control_other(&mut self, key: event::KeyEvent) {
+    fn control_other(key: event::KeyEvent) {
         match key.code {
             _ => {}
         }
     }
 
-    fn control_files(&mut self, key: event::KeyEvent) {
+    fn control_files(key: event::KeyEvent) {
         match key.code {
             _ => {}
         }
@@ -98,19 +99,29 @@ impl StateMachine {
         }
     }
 
+    // Debug
+    pub fn print_state(&mut self) {
+        match self.active {
+            State::Settings(_) => println!("Settings"),
+            State::Other(_) => println!("Other"),
+            State::Files(_) => println!("Files"),
+        }
+    }
+
     pub fn delegate_input(&mut self, key: event::KeyEvent) {
         match key.modifiers {
-            event::KeyModifiers::SHIFT => self.handle_transition(key),
+            event::KeyModifiers::SHIFT =>
+                self.handle_transition(key),
             _ => match self.active {
-                State::Settings(ref mut settings_window) => self.control_settings(settings_window, key),
-                State::Other(_) => self.control_other(key),
-                State::Files(_) => self.control_files(key),
+                State::Settings(ref mut settings_window) => Self::control_settings(settings_window, key),
+                State::Other(_) => Self::control_other(key),
+                State::Files(_) => Self::control_files(key),
             }
         }
     }
 
     pub fn new(settings: &mut Vec<Setting>) -> Self {
-        let settings_window = SettingsWindow(0, *settings);
+        let settings_window = SettingsWindow(0, settings.clone());
         let files_window = FilesWindow;
         let other_window = OtherWindow;
         StateMachine {
