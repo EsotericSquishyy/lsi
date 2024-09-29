@@ -7,6 +7,7 @@ pub mod states;
 use crate::settings::Setting;
 use crate::states::StateMachine;
 use std::collections::VecDeque;
+use crate::states::State;
 
 use crossterm::{
     event::{self, KeyCode, KeyEvent},
@@ -22,6 +23,11 @@ use tui::{
     widgets::{Block, Borders, List, ListItem, ListState, Tabs},
     Terminal
 };
+
+
+
+
+
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Setup terminal
@@ -50,6 +56,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut settings_list_state = ListState::default();
     settings_list_state.select(Some(state.get_settings_index()));
 
+    let active_border = Style::default().fg(Color::Yellow);
+    let inactive_border = Style::default().fg(Color::White);
+
     loop {
 
         // Draw UI
@@ -77,9 +86,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
                 .split(layout[0]);
 
-            let options_block   = Block::default().title("Options").borders(Borders::ALL);
-            let other_block     = Block::default().title("Other").borders(Borders::ALL);
-            let files_block     = Block::default().title("Files").borders(Borders::ALL);
+            let options_block   = Block::default()
+                .title("Options")
+                .borders(Borders::ALL)
+                .border_style(if state.get_state() == State::Settings { active_border } else { inactive_border });
+            let other_block     = Block::default()
+                .title("Other")
+                .borders(Borders::ALL)
+                .border_style(if state.get_state() == State::Other { active_border } else { inactive_border });
+            let files_block     = Block::default()
+                .title("Files")
+                .borders(Borders::ALL)
+                .border_style(if state.get_state() == State::Files { active_border } else { inactive_border });
 
             let titles: Vec<ListItem> = state.get_settings()
                 .iter()
@@ -128,4 +146,5 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
 
