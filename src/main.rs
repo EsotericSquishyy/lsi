@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let other_block     = Block::default().title("Other").borders(Borders::ALL);
             let files_block     = Block::default().title("Files").borders(Borders::ALL);
 
-            let titles: Vec<ListItem> = settings
+            let titles: Vec<ListItem> = state.get_settings()
                 .iter()
                 .map(|s| ListItem::new(s.current_display(14, 17)))
                 .collect();

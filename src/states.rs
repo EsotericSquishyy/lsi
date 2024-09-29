@@ -24,6 +24,8 @@ pub struct StateMachine {
 }
 
 impl StateMachine {
+    /*----- Private -----*/
+
     fn handle_transition(&mut self, key: event::KeyEvent) {
         match key.code {
             KeyCode::Char('J') | KeyCode::Char('K') => match self.active {
@@ -92,10 +94,21 @@ impl StateMachine {
         }
     }
 
-    pub fn get_settings_index(&mut self) -> usize {
+
+
+    /*----- Public -----*/
+
+    pub fn get_settings_index(& self) -> usize {
         match self.active {
-            State::Settings(ref mut settings_window) => settings_window.0,
+            State::Settings(ref settings_window) => settings_window.0,
             _ => self.settings_window.0
+        }
+    }
+
+    pub fn get_settings(& self) -> &Vec<Setting> {
+        match self.active {
+            State::Settings(ref settings_window) => &settings_window.1,
+            _ => &self.settings_window.1
         }
     }
 
