@@ -10,18 +10,25 @@ use std::collections::VecDeque;
 use crate::states::State;
 
 use crossterm::{
-    event::{self, KeyCode, KeyEvent},
+    event::{self, KeyCode},
     execute,
     terminal::{self, ClearType},
     ExecutableCommand,
 };
-use std::{error::Error, io::{self, Write}, time::Duration};
+use std::{
+    error::Error,
+    io::{self, Write},
+    fs,
+    time::Duration,
+    path::Path,
+    os::unix::fs::PermissionsExt, // Use this for Unix-like permissions
+};
 use tui::{
     style::{Color, Style},
     backend::CrosstermBackend,
     layout::{Layout, Rect, Constraint, Direction},
     widgets::{Block, Borders, List, ListItem, ListState, Tabs},
-    Terminal
+    Terminal,
 };
 
 
@@ -30,6 +37,10 @@ use tui::{
 
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // File system
+    let start_dir = std::env::current_dir()?;
+    let _ = print_file_tree(&start_dir, 0);
+
     // Setup terminal
     let mut stdout = io::stdout();
     terminal::enable_raw_mode()?;
@@ -37,6 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut term = Terminal::new(backend)?;
 
+    // State Machine
     let mut settings = vec![
         Setting::new_options_setting("Visual Mode", VecDeque::from(["List".to_string(), "Tree".to_string()])),
         Setting::new_options_setting("Visibility", VecDeque::from(["Normal".to_string(), "Most".to_string(), "All".to_string()])),
@@ -48,19 +60,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         Setting::new_check_setting("Group", false),
         Setting::new_options_setting("Depth", VecDeque::from(["Infinite".to_string(), "1".to_string(), "2".to_string(), "3".to_string()]))
     ];
-
-    // State Machine
     let mut state = StateMachine::new(&mut settings);
 
     // Find State
     let mut settings_list_state = ListState::default();
     settings_list_state.select(Some(state.get_settings_index()));
 
+    // For styling
     let active_border = Style::default().fg(Color::Yellow);
     let inactive_border = Style::default().fg(Color::White);
 
-    loop {
 
+
+    loop {
         // Draw UI
         term.draw(|f| {
             let size = f.size();
@@ -95,7 +107,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .borders(Borders::ALL)
                 .border_style(if state.get_state() == State::Other { active_border } else { inactive_border });
             let files_block     = Block::default()
-                .title("Files")
+                .title(format!("{}-{}", "Files", start_dir.display()))
                 .borders(Borders::ALL)
                 .border_style(if state.get_state() == State::Files { active_border } else { inactive_border });
 
@@ -128,8 +140,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
             settings_list_state.select(Some(state.get_settings_index()));
-            // state.print_active_setting(0);
-            // state.print_state(); // Debug
         }
     }
 
@@ -148,3 +158,22 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 
+fn print_file_tree(dir: &Path, level: usize) -> Result<(), Box<dyn Error>> {
+    let entries = fs::read_dir(dir)?;
+
+    // Iterate over each entry
+    for entry in entries {
+        let entry = entry?;
+        let path = entry.path();
+
+        // Print the current path with indentation based on level
+        println!("{:indent$}{}", "", entry.file_name().to_string_lossy(), indent = level);
+
+        // If the entry is a directory, recursively call this function
+        if path.is_dir() {
+            print_file_tree(&path, level + 1)?;
+        }
+    }
+
+    Ok(())
+}
